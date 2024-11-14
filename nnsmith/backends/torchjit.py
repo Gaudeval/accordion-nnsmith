@@ -2,6 +2,7 @@ import os
 import warnings
 from typing import Dict, List, Tuple
 
+import nvtx
 import numpy as np
 import torch
 from multipledispatch import dispatch
@@ -64,7 +65,8 @@ class TorchJIT(BackendFactory):
                     ret[name] = numpify(output)
                     if output.requires_grad:
                         # get Vector-Jacobian product
-                        out_grad = torch.autograd.grad(
+                        with nvtx.annotate("accordion"):
+                            out_grad = torch.autograd.grad(
                             outputs=output,
                             inputs=params.values(),
                             grad_outputs=torch.ones_like(output),

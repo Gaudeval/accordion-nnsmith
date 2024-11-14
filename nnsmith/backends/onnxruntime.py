@@ -1,5 +1,6 @@
 from typing import List
 
+import nvtx
 import onnxruntime as ort
 from multipledispatch import dispatch
 
@@ -66,7 +67,8 @@ class ORT(BackendFactory):
         out_names = list(model.output_like.keys())
 
         def closure(inputs):
-            res = sess.run(out_names, inputs)
+            with nvtx.annotate("accordion"):
+                res = sess.run(out_names, inputs)
             return {n: r for n, r in zip(out_names, res)}
 
         return closure

@@ -1,6 +1,7 @@
 import logging
 from typing import List
 
+import nvtx
 import tvm
 from multipledispatch import dispatch
 from tvm import relay
@@ -86,7 +87,8 @@ class TVM(BackendFactory):
             ).evaluate()
 
         def closure(inputs):
-            output = executor(**inputs)
+            with nvtx.annotate("accordion"):
+                output = executor(**inputs)
             output = self.cvt_result(output)
             return dict(zip(model.output_like.keys(), output))
 

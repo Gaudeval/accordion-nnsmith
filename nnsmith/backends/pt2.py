@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional, Tuple
 
+import nvtx
 import numpy as np
 import torch
 import torch.fx
@@ -68,13 +69,14 @@ class PT2(BackendFactory):
                     ret[name] = numpify(output)
                     if output.requires_grad:
                         # Get Vector-Jacobian product
-                        out_grad = torch.autograd.grad(
-                            outputs=output,
-                            inputs=compiled.parameters(),
-                            grad_outputs=torch.ones_like(output),
-                            retain_graph=True,
-                            allow_unused=True,
-                        )
+                        with nvtx.annotate("accordion"):
+                            out_grad = torch.autograd.grad(
+                                outputs=output,
+                                inputs=compiled.parameters(),
+                                grad_outputs=torch.ones_like(output),
+                                retain_graph=True,
+                                allow_unused=True,
+                            )
                         for k, v in zip(param_names, out_grad):
                             ret[name + "_vjp_" + k] = numpify(v)
             else:

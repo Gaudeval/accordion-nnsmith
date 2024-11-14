@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
+import nvtx
 import numpy as np
 import pycuda.driver as cuda
 import tensorrt as trt
@@ -60,21 +61,22 @@ class TRT(BackendFactory):
             ) = self.allocate_buffers(engine)
             context = engine.create_execution_context()
 
-            for iname in inputs:
-                np.copyto(
-                    trt_inputs[name2idx[iname]].host,
-                    inputs[iname]
-                    .astype(trt.nptype(engine.get_binding_dtype(iname)))
-                    .ravel(),
-                )
+            with nvtx.annotate("accordion"):
+                for iname in inputs:
+                    np.copyto(
+                        trt_inputs[name2idx[iname]].host,
+                        inputs[iname]
+                        .astype(trt.nptype(engine.get_binding_dtype(iname)))
+                        .ravel(),
+                    )
 
-            trt_concrete_outputs = self.do_inference_v2(
-                context,
-                bindings=trt_bindings,
-                inputs=trt_inputs,
-                outputs=trt_outputs,
-                stream=stream,
-            )
+                trt_concrete_outputs = self.do_inference_v2(
+                    context,
+                    bindings=trt_bindings,
+                    inputs=trt_inputs,
+                    outputs=trt_outputs,
+                    stream=stream,
+                )
 
             return {
                 n: v.reshape(engine.get_binding_shape(n))

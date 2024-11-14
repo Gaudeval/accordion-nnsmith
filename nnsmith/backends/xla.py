@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+import nvtx
 import tensorflow as tf  # type: ignore
 from multipledispatch import dispatch
 
@@ -47,7 +48,8 @@ class XLA(BackendFactory):
 
         def closure(inputs: Dict[str, tf.Tensor]) -> Dict[str, tf.Tensor]:
             with self.device, EagerModeCtx(False):
-                result = np_dict_from_tf(compiled(**tf_dict_from_np(inputs)))
+                with nvtx.annotate("accordion"):
+                    result = np_dict_from_tf(compiled(**tf_dict_from_np(inputs)))
             return result
 
         return closure
