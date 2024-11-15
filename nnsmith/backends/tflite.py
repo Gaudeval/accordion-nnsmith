@@ -1,6 +1,7 @@
 from os import PathLike
 from typing import Dict, List
 
+import nvtx
 import numpy as np
 import tensorflow as tf  # type: ignore
 from multipledispatch import dispatch
@@ -15,7 +16,9 @@ class TFLiteRunner:
         self.tfnet_callable = tfnet_callable
 
     def __call__(self, input: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
-        return {k: np.array(v) for k, v in self.tfnet_callable(**input).items()}
+        with nvtx.annotate("accordion"):
+            outputs = self.tfnet_callable(**input)
+        return {k: np.array(v) for k, v in outputs.items()}
 
 
 class TFLite(BackendFactory):
